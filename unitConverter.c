@@ -51,6 +51,7 @@ void handleTempCalculation(int *from_int, int *to_int) {
     int temp_int;
     float temp_float;
 
+    // Check if same unit is given twice
     if(*from_int == *to_int) {
         printf("\nCannot convert to same unit!\r\n\n");
         return;
@@ -58,20 +59,27 @@ void handleTempCalculation(int *from_int, int *to_int) {
 
     printf("Enter the starting temperature: ");
     fgets(amount, sizeof(amount), stdin);
-    
+
+    // Check if the amount is valid
     if(!parse_input(amount, &temp_int, &temp_float)) {
         printf("\nPlease give valid amount\r\n\n");
         return;
+    // C to F
     } else if (*from_int == 1 && *to_int == 2) {
         finalValue = temp_float * 1.8 + 32;
+    // C to K
     } else if (*from_int == 1 && *to_int == 3) {
-        finalValue = temp_float * 273.15;
+        finalValue = temp_float + 273.15;
+    // F to C
     } else if (*from_int == 2 && *to_int == 1) {
         finalValue = (temp_float - 32) / 1.8;
+    // F to K
     } else if (*from_int == 2 && *to_int == 3) {
         finalValue = (temp_float + 459.67) / 1.8;
+    // K to C
     } else if (*from_int == 3 && *to_int == 1) {
-        finalValue = temp_float / 273.15;
+        finalValue = temp_float - 273.15;
+    // K to F
     } else if (*from_int == 3 && *to_int == 2) {
         finalValue = (temp_float - 273.15) * 1.8 + 32;
     }
@@ -87,8 +95,7 @@ void temperatureConversion() {
     
     char to_unit[BUFFSIZE];
     int to_int;
-    float to_float;
-    
+
     printf("Please give input unit\r\n");
     printf("1. Celsius\r\n");
     printf("2. Fahrenheit\r\n");
@@ -104,7 +111,7 @@ void temperatureConversion() {
         printf("Your input: ");
         fgets(to_unit, sizeof(to_unit), stdin);
 
-        if(parse_input(to_unit, &to_int, &to_float)) {
+        if(parse_input(to_unit, &to_int, &from_float)) {
             handleTempCalculation(&from_int, &to_int);
         } else {
             printf("\nPlease give valid amount\r\n\n");
