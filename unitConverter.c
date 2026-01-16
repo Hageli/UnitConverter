@@ -45,6 +45,7 @@ bool parse_input(char *input, int *choice, float *to_calculation) {
     return true;
 }
 
+// Checks the conversion type and calculates final result
 void handleTempCalculation(int *from_int, int *to_int) {
     float finalValue;
     char amount[BUFFSIZE];
@@ -88,6 +89,8 @@ void handleTempCalculation(int *from_int, int *to_int) {
     return;
 }
 
+// Menu for temperature units
+// Calls: handleTempCalculation()
 void temperatureConversion() {
     char from_unit[BUFFSIZE];
     int from_int;
@@ -122,19 +125,24 @@ void temperatureConversion() {
     return;
 }
 
+// TODO: british stone, kilogram, gram, ounce, pound
 void weightConversion () {
 
 }
 
-void sizeConversion () {
-
-}
-
+// TODO: dollar, euro, swedish krona, ruble
 void moneyConversion () {
 
 }
+// TODO: metres, feet, inches, centrimetres
+void distanceConversion () {
 
+}
 
+// TODO: cup, gallon, litre, ml, barrel
+void volumeConversion () {
+
+}
 
 int main() {
     char input[BUFFSIZE];
@@ -149,7 +157,7 @@ int main() {
         // Type choices
         printf("1. Temperature\r\n");
         printf("2. Weight\r\n");
-        printf("3. Size\r\n");        
+        printf("3. Distance\r\n");        
         printf("4. Money\r\n");
         printf("0. Exit program\r\n\n");
         printf("Your input: ");
@@ -166,7 +174,7 @@ int main() {
                     weightConversion();
                     break;
                 case 3:
-                    sizeConversion();
+                    distanceConversion();
                     break;
                 case 4:
                     moneyConversion();
