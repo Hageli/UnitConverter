@@ -89,6 +89,91 @@ void handleTempCalculation(int *from_int, int *to_int) {
     return;
 }
 
+void handleWeightCalculation (int *from_int, int *to_int) {
+    char amount[BUFFSIZE];
+    int amount_int;
+    float amount_float;
+    float finalValue;
+
+    if(*from_int == *to_int) {
+        printf("\nCannot convert to same unit!\r\n\n");
+        return;
+    }
+
+    printf("Enter the starting weight: ");
+    fgets(amount, sizeof(amount), stdin);
+
+    if(!parse_input(amount, &amount_int, &amount_float)) {
+        printf("\nPlease give valid amount\r\n\n");
+        return;
+    } else if (amount_int < 0) {
+        printf("\nNo negative mass values allowed!\r\n\n");
+        return;
+    // G to KG
+    } else if (*from_int == 1 && *to_int == 2) {
+        finalValue = amount_float / 1000;
+    // G to OZ
+    } else if (*from_int == 1 && *to_int == 3) {
+        finalValue = amount_float / 28.3495;
+    // G to LB
+    } else if (*from_int == 1 && *to_int == 4) {
+        finalValue = amount_float / 453.592;
+    // G to ST
+    } else if (*from_int == 1 && *to_int== 5) {
+        finalValue = amount_float / 6350.29;
+    // KG to G
+    } else if (*from_int == 2 && *to_int == 1) {
+        finalValue = amount_float * 1000;
+    // KG to OZ
+    } else if (*from_int == 2 && *to_int == 3) {
+        finalValue = amount_float * 35.274;
+    // KG to LB
+    } else if (*from_int == 2 && *to_int == 4) {
+        finalValue = amount_float * 2.20462;
+    // KG to ST
+    } else if (*from_int == 2 && *to_int == 5) {
+        finalValue = amount_float * 0.157473;
+    // OZ to G
+    } else if (*from_int == 3 && *to_int == 1) {
+        finalValue = amount_float * 28.3495;
+    // OZ to KG
+    } else if (*from_int == 3 && *to_int == 2) {
+        finalValue = amount_float / 35.274;
+    // OZ to LB
+    } else if (*from_int == 3 && *to_int == 4) {
+        finalValue = amount_float / 16;
+    // OZ to ST
+    } else if (*from_int == 3 && *to_int == 5) {
+        finalValue = amount_float / 224;
+    // LB to G
+    } else if (*from_int == 4 && *to_int == 1) {
+        finalValue = amount_float * 453.592;
+    // LB to KG
+    } else if (*from_int == 4 && *to_int == 2) {
+        finalValue = amount_float / 2.20462;
+    // LB to OZ
+    } else if (*from_int == 4 && *to_int == 3) {
+        finalValue = amount_float * 16;
+    // LB to ST
+    } else if (*from_int == 4 && *to_int == 5) {
+        finalValue = amount_float / 14;
+    // ST to G
+    } else if (*from_int == 5 && *to_int == 1) {
+        finalValue = amount_float * 6350.29;
+    // ST to KG
+    } else if (*from_int == 5 && *to_int == 2) {
+        finalValue = amount_float / 0.157473;
+    // ST to OZ
+    } else if (*from_int == 5 && *to_int == 3) {
+        finalValue = amount_float * 224;
+    // ST to LB
+    } else if (*from_int == 5 && *to_int == 4) {
+        finalValue = amount_float * 14;
+    }
+    printf("%.2f\r\n\n", finalValue);
+    return;
+}
+
 // Menu for temperature units
 // Calls: handleTempCalculation()
 void temperatureConversion() {
@@ -117,7 +202,7 @@ void temperatureConversion() {
         if(parse_input(to_unit, &to_int, &from_float)) {
             handleTempCalculation(&from_int, &to_int);
         } else {
-            printf("\nPlease give valid amount\r\n\n");
+            printf("\nPlease give valid unit\r\n\n");
         }
     } else {
         printf("\nPlease give valid unit\r\n\n");
@@ -127,13 +212,50 @@ void temperatureConversion() {
 
 // TODO: british stone, kilogram, gram, ounce, pound
 void weightConversion () {
+    char from_unit[BUFFSIZE];
+    char to_unit[BUFFSIZE];
+    int from_int;
+    int to_int;
+    float from_float;
 
+    printf("\nPlease give input unit:\r\n");
+    printf("1. Gram\r\n");
+    printf("2. Kilogram\r\n");
+    printf("3. Ounce\r\n");
+    printf("4. Pound\r\n");
+    printf("5. Stone\r\n\n");
+    printf("Your input: ");
+    fgets(from_unit, sizeof(from_unit), stdin);
+
+    if(parse_input(from_unit, &from_int, &from_float)) {
+        printf("\nPlease give output unit:\r\n");
+        printf("1. Gram\r\n");
+        printf("2. Kilogram\r\n");
+        printf("3. Ounce\r\n");
+        printf("4. Pound\r\n");
+        printf("5. Stone\r\n\n");
+        printf("Your input: ");
+        fgets(to_unit, sizeof(to_unit), stdin);
+
+        if(parse_input(to_unit, &to_int, &from_float)) {
+            handleWeightCalculation(&from_int, &to_int);
+        } else {
+            printf("\nPlease give unit\r\n\n");
+            return;    
+        }
+    } else {
+        printf("\nPlease give valid unit\r\n\n");
+        return;
+    }
+    return;
 }
+
 
 // TODO: dollar, euro, swedish krona, ruble
 void moneyConversion () {
 
 }
+
 // TODO: metres, feet, inches, centrimetres
 void distanceConversion () {
 
