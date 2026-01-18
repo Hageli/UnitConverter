@@ -7,21 +7,26 @@
 #define BUFFSIZE 1024
 
 typedef struct {
-    char *valueArray[4];
+    char *valueArray[3];
 } Temperatures;
 
 typedef struct {
-    char *valueArray[6];
+    char *valueArray[5];
 } Weights;
 
 typedef struct {
-    char *valueArray[5];
+    char *valueArray[4];
 } Distances;
 
+typedef struct {
+    char *valueArray[5];
+} Volumes;
+
 // Initializing the units
-static Temperatures tempUnits = {"", "Celsius", "Fahrenheit", "Kelvin"};
-static Weights weightUnits = {"", "Gram", "Kilogram", "Ounce", "Pound", "Stone"};
-static Distances distUnits = {"", "Inch", "Centimetre", "Metre", "Foot"};
+static Temperatures tempUnits = {"Celsius", "Fahrenheit", "Kelvin"};
+static Weights weightUnits = {"Gram", "Kilogram", "Ounce (US)", "Pound (US)", "Stone (GBR)"};
+static Distances distUnits = {"Inch", "Centimetre", "Metre", "Foot"};
+static Volumes volUnits = {"Millilitre", "Litre", "Cup (US)", "Gallon (US)", "Barrel (Oil)"};
 
 // Return conditions: true IF input is an integer, ELSE false
 // Notes: Negative integer values accepted, must check validity of input elsewhere
@@ -59,6 +64,7 @@ bool parse_input(char *input, int *choice, float *to_calculation) {
     int_buf[int_chars] = '\0';
     *to_calculation = atof(int_buf);
     *choice = atoi(int_buf);
+
     return true;
 }
 
@@ -73,7 +79,7 @@ void handleTempCalculation(int *from_int, int *to_int) {
     if(*from_int == *to_int) {
         printf("\nCannot convert to same unit!\r\n\n");
         return;
-    }
+    } 
 
     printf("Enter the starting temperature: ");
     fgets(amount, sizeof(amount), stdin);
@@ -102,7 +108,7 @@ void handleTempCalculation(int *from_int, int *to_int) {
         finalValue = amount_float - 273.15 * 1.8 + 32;
     }
 
-    printf("\nConverting %.2f %s to %s... \nResult: %.2f %s\r\n\n", amount_float, tempUnits.valueArray[*from_int], tempUnits.valueArray[*to_int], finalValue, tempUnits.valueArray[*to_int]);
+    printf("\nConverting %.2f %s to %s... \nResult: %.2f %s\r\n\n", amount_float, tempUnits.valueArray[*from_int - 1], tempUnits.valueArray[*to_int - 1], finalValue, tempUnits.valueArray[*to_int - 1]);
     return;
 }
 
@@ -189,7 +195,7 @@ void handleWeightCalculation (int *from_int, int *to_int) {
         finalValue = amount_float * 14;
     }
 
-    printf("\nConverting %.2f %s to %s... \nResult: %.2f %s\r\n\n", amount_float, weightUnits.valueArray[*from_int], weightUnits.valueArray[*to_int], finalValue, weightUnits.valueArray[*to_int]);
+    printf("\nConverting %.2f %s to %s... \nResult: %.2f %s\r\n\n", amount_float, weightUnits.valueArray[*from_int - 1], weightUnits.valueArray[*to_int - 1], finalValue, weightUnits.valueArray[*to_int - 1]);
     return;
 }
 
@@ -252,7 +258,94 @@ void handleDistanceCalculation (int *from_int, int *to_int) {
         finalValue = amount_float / 3.28084;
     }
 
-    printf("\nConverting %.2f %s to %s... \nResult: %.2f %s\r\n\n", amount_float, distUnits.valueArray[*from_int], distUnits.valueArray[*to_int], finalValue, distUnits.valueArray[*to_int]);
+    printf("\nConverting %.2f %s to %s... \nResult: %.2f %s\r\n\n", amount_float, distUnits.valueArray[*from_int - 1], distUnits.valueArray[*to_int - 1], finalValue, distUnits.valueArray[*to_int - 1]);
+    return;
+}
+
+// Checks the conversion type and calculates final weight result
+void handleVolumeCalculation (int *from_int, int *to_int) {
+    char amount[BUFFSIZE];
+    int amount_int;
+    float amount_float;
+    float finalValue;
+
+    if(*from_int == *to_int) {
+        printf("\nCannot convert to same unit!\r\n\n");
+        return;
+    }
+
+    printf("Enter the starting volume: ");
+    fgets(amount, sizeof(amount), stdin);
+
+    if(!parse_input(amount, &amount_int, &amount_float)) {
+        printf("\nPlease give valid amount\r\n\n");
+        return;
+    } else if (amount_int < 0) {
+        printf("\nNo negative volume values allowed!\r\n\n");
+        return;
+    // ML to L
+    } else if (*from_int == 1 && *to_int == 2) {
+        finalValue = amount_float / 1000;
+    // ML to CUP(US)
+    } else if (*from_int == 1 && *to_int == 3) {
+        finalValue = amount_float / 236.6;
+    // ML to GL(US)
+    } else if (*from_int == 1 && *to_int == 4) {
+        finalValue = amount_float / 3785.41;
+    // ML to BR(US)
+    } else if (*from_int == 1 && *to_int== 5) {
+        finalValue = amount_float / 158987.294;
+    // L to ML
+    } else if (*from_int == 2 && *to_int == 1) {
+        finalValue = amount_float * 1000;
+    // L to CUP(US)
+    } else if (*from_int == 2 && *to_int == 3) {
+        finalValue = amount_float * 4.22675;
+    // L to GL(US)
+    } else if (*from_int == 2 && *to_int == 4) {
+        finalValue = amount_float / 3.785;
+    // L to BR(US)
+    } else if (*from_int == 2 && *to_int == 5) {
+        finalValue = amount_float / 158.987;
+    // CUP(US) to ML
+    } else if (*from_int == 3 && *to_int == 1) {
+        finalValue = amount_float * 236.6;
+    // CUP(US) to L
+    } else if (*from_int == 3 && *to_int == 2) {
+        finalValue = amount_float * 0.236588;
+    // CUP(US) to GL(US)
+    } else if (*from_int == 3 && *to_int == 4) {
+        finalValue = amount_float / 16;
+    // CUP(US) to BR(US)
+    } else if (*from_int == 3 && *to_int == 5) {
+        finalValue = amount_float / 672;
+    // GL(US) to ML
+    } else if (*from_int == 4 && *to_int == 1) {
+        finalValue = amount_float * 3785.41;
+    // GL(US) to L
+    } else if (*from_int == 4 && *to_int == 2) {
+        finalValue = amount_float * 3.785;
+    // GL(US) to CUP(US)
+    } else if (*from_int == 4 && *to_int == 3) {
+        finalValue = amount_float * 16;
+    // GL(US) to BR(US)
+    } else if (*from_int == 4 && *to_int == 5) {
+        finalValue = amount_float / 42;
+    // BR(US) to ML
+    } else if (*from_int == 5 && *to_int == 1) {
+        finalValue = amount_float * 158987.294;
+    // BR(US) to L
+    } else if (*from_int == 5 && *to_int == 2) {
+        finalValue = amount_float * 158.987;
+    // BR(US) to CUP(US)
+    } else if (*from_int == 5 && *to_int == 3) {
+        finalValue = amount_float * 672;
+    // BR(US) to GL(US)
+    } else if (*from_int == 5 && *to_int == 4) {
+        finalValue = amount_float * 42;
+    }
+
+    printf("\nConverting %.2f %s to %s... \nResult: %.2f %s\r\n\n", amount_float, volUnits.valueArray[*from_int - 1], volUnits.valueArray[*to_int - 1], finalValue, volUnits.valueArray[*to_int - 1]);
     return;
 }
 
@@ -323,7 +416,7 @@ void weightConversion () {
         if(parse_input(to_unit, &to_int, &from_float)) {
             handleWeightCalculation(&from_int, &to_int);
         } else {
-            printf("\nPlease give unit\r\n\n");
+            printf("\nPlease give valid unit\r\n\n");
             return;    
         }
     } else {
@@ -333,13 +426,14 @@ void weightConversion () {
     return;
 }
 
-
+// Menu for currencies
 // TODO: dollar, euro, swedish krona, ruble
 void moneyConversion () {
 
 }
 
-// 
+// Menu for distance units
+// Calls: handleDistanceCalculation()
 void distanceConversion () {
     char from_unit[BUFFSIZE];
     int from_int;
@@ -376,9 +470,45 @@ void distanceConversion () {
     return;
 }
 
-// TODO: cup, gallon, litre, ml, barrel
+// Menu for volume units
+// Calls: handleVolumeCalculation()
 void volumeConversion () {
+    char from_unit[BUFFSIZE];
+    char to_unit[BUFFSIZE];
+    int from_int;
+    int to_int;
+    float from_float;
 
+    printf("\nPlease give input unit:\r\n");
+    printf("1. Millilitre\r\n");
+    printf("2. Litre\r\n");
+    printf("3. Cup (US)\r\n");
+    printf("4. Gallon (US)\r\n");
+    printf("5. Barrel (Oil)\r\n\n");
+    printf("Your input: ");
+    fgets(from_unit, sizeof(from_unit), stdin);
+
+    if(parse_input(from_unit, &from_int, &from_float)) {
+        printf("\nPlease give output unit:\r\n");
+        printf("1. Millilitre\r\n");
+        printf("2. Litre\r\n");
+        printf("3. Cup (US)\r\n");
+        printf("4. Gallon (US)\r\n");
+        printf("5. Barrel (Oil)\r\n\n");
+        printf("Your input: ");
+        fgets(to_unit, sizeof(to_unit), stdin);
+
+        if(parse_input(to_unit, &to_int, &from_float)) {
+            handleVolumeCalculation(&from_int, &to_int);
+        } else {
+            printf("\nPlease valid give unit\r\n\n");
+            return;    
+        }
+    } else {
+        printf("\nPlease give valid unit\r\n\n");
+        return;
+    }
+    return;
 }
 
 int main() {
@@ -395,6 +525,7 @@ int main() {
         printf("2. Weight\r\n");
         printf("3. Distance\r\n");        
         printf("4. Money\r\n");
+        printf("5. Volume\r\n");
         printf("0. Exit program\r\n\n");
         printf("Your input: ");
 
@@ -414,6 +545,9 @@ int main() {
                     break;
                 case 4:
                     moneyConversion();
+                    break;
+                case 5:
+                    volumeConversion();
                     break;
                 case 0:
                     printf("Exiting system...\r\n\n");
