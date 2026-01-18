@@ -6,6 +6,23 @@
 
 #define BUFFSIZE 1024
 
+typedef struct {
+    char *valueArray[4];
+} Temperatures;
+
+typedef struct {
+    char *valueArray[6];
+} Weights;
+
+typedef struct {
+    char *valueArray[5];
+} Distances;
+
+// Initializing the units
+static Temperatures tempUnits = {"", "Celsius", "Fahrenheit", "Kelvin"};
+static Weights weightUnits = {"", "Gram", "Kilogram", "Ounce", "Pound", "Stone"};
+static Distances distUnits = {"", "Inch", "Centimetre", "Metre", "Foot"};
+
 // Return conditions: true IF input is an integer, ELSE false
 // Notes: Negative integer values accepted, must check validity of input elsewhere
 bool parse_input(char *input, int *choice, float *to_calculation) {
@@ -45,12 +62,12 @@ bool parse_input(char *input, int *choice, float *to_calculation) {
     return true;
 }
 
-// Checks the conversion type and calculates final result
+// Checks the conversion type and calculates final temperature result
 void handleTempCalculation(int *from_int, int *to_int) {
-    float finalValue;
     char amount[BUFFSIZE];
-    int temp_int;
-    float temp_float;
+    int amount_int;
+    float amount_float;
+    float finalValue;
 
     // Check if same unit is given twice
     if(*from_int == *to_int) {
@@ -62,33 +79,34 @@ void handleTempCalculation(int *from_int, int *to_int) {
     fgets(amount, sizeof(amount), stdin);
 
     // Check if the amount is valid
-    if(!parse_input(amount, &temp_int, &temp_float)) {
+    if(!parse_input(amount, &amount_int, &amount_float)) {
         printf("\nPlease give valid amount\r\n\n");
         return;
     // C to F
     } else if (*from_int == 1 && *to_int == 2) {
-        finalValue = temp_float * 1.8 + 32;
+        finalValue = amount_float * 1.8 + 32;
     // C to K
     } else if (*from_int == 1 && *to_int == 3) {
-        finalValue = temp_float + 273.15;
+        finalValue = amount_float + 273.15;
     // F to C
     } else if (*from_int == 2 && *to_int == 1) {
-        finalValue = (temp_float - 32) / 1.8;
+        finalValue = (amount_float - 32) / 1.8;
     // F to K
     } else if (*from_int == 2 && *to_int == 3) {
-        finalValue = (temp_float + 459.67) / 1.8;
+        finalValue = (amount_float + 459.67) / 1.8;
     // K to C
     } else if (*from_int == 3 && *to_int == 1) {
-        finalValue = temp_float - 273.15;
+        finalValue = amount_float - 273.15;
     // K to F
     } else if (*from_int == 3 && *to_int == 2) {
-        finalValue = (temp_float - 273.15) * 1.8 + 32;
+        finalValue = amount_float - 273.15 * 1.8 + 32;
     }
 
-    printf("\n%.2f\r\n\n", finalValue);
+    printf("\nConverting %.2f %s to %s... \nResult: %.2f %s\r\n\n", amount_float, tempUnits.valueArray[*from_int], tempUnits.valueArray[*to_int], finalValue, tempUnits.valueArray[*to_int]);
     return;
 }
 
+// Checks the conversion type and calculates final weight result
 void handleWeightCalculation (int *from_int, int *to_int) {
     char amount[BUFFSIZE];
     int amount_int;
@@ -170,7 +188,71 @@ void handleWeightCalculation (int *from_int, int *to_int) {
     } else if (*from_int == 5 && *to_int == 4) {
         finalValue = amount_float * 14;
     }
-    printf("%.2f\r\n\n", finalValue);
+
+    printf("\nConverting %.2f %s to %s... \nResult: %.2f %s\r\n\n", amount_float, weightUnits.valueArray[*from_int], weightUnits.valueArray[*to_int], finalValue, weightUnits.valueArray[*to_int]);
+    return;
+}
+
+// Checks the conversion type and calculates final distance result
+void handleDistanceCalculation (int *from_int, int *to_int) {
+    char amount[BUFFSIZE];
+    int amount_int;
+    float amount_float;
+    float finalValue;
+
+    if(*from_int == *to_int) {
+        printf("\nCannot convert to same unit!\r\n\n");
+        return;
+    }
+
+    printf("Enter the starting distance: ");
+    fgets(amount, sizeof(amount), stdin);
+
+    if(!parse_input(amount, &amount_int, &amount_float)) {
+        printf("\nPlease give valid amount\r\n\n");
+        return;
+    } else if (amount_int < 0) {
+        printf("\nNo negative distance values allowed!\r\n\n");
+        return;
+    // INCH to CM 
+    } else if (*from_int == 1 && *to_int == 2) {
+        finalValue = amount_float * 2.54;
+    // INCH to M
+    } else if (*from_int == 1 && *to_int == 3){
+        finalValue = amount_float * 0.0254;
+    // INCH to FOOT
+    } else if (*from_int == 1 && *to_int == 4){
+        finalValue = amount_float / 12;
+    // CM to INCH
+    } else if (*from_int == 2 && *to_int == 1) {
+        finalValue = amount_float / 2.54;
+    // CM to M
+    } else if (*from_int == 2 && *to_int == 3) {
+        finalValue = amount_float / 100;
+    // CM to FOOT
+    } else if (*from_int == 2 && *to_int == 4) {
+        finalValue = amount_float / 30.48;
+    // M to INCH
+    } else if (*from_int == 3 && *to_int == 1) {
+        finalValue = amount_float / 0.0254;
+    // M to CM
+    } else if (*from_int == 3 && *to_int == 2) {
+        finalValue = amount_float * 100;
+    // M to FOOT
+    } else if (*from_int == 3 && *to_int == 4) {
+        finalValue = amount_float * 3.28084;
+    // FOOT to INCH
+    } else if (*from_int == 4 && *to_int == 1) {
+        finalValue = amount_float * 12;
+    // FOOT TO CM
+    } else if (*from_int == 4 && *to_int == 2) {
+        finalValue = amount_float * 30.48;
+    // FOOT TO M
+    } else if (*from_int == 4 && *to_int == 3) {
+        finalValue = amount_float / 3.28084;
+    }
+
+    printf("\nConverting %.2f %s to %s... \nResult: %.2f %s\r\n\n", amount_float, distUnits.valueArray[*from_int], distUnits.valueArray[*to_int], finalValue, distUnits.valueArray[*to_int]);
     return;
 }
 
@@ -210,7 +292,8 @@ void temperatureConversion() {
     return;
 }
 
-// TODO: british stone, kilogram, gram, ounce, pound
+// Menu for weight units
+// Calls: handleWeightCalculation()
 void weightConversion () {
     char from_unit[BUFFSIZE];
     char to_unit[BUFFSIZE];
@@ -256,9 +339,41 @@ void moneyConversion () {
 
 }
 
-// TODO: metres, feet, inches, centrimetres
+// 
 void distanceConversion () {
+    char from_unit[BUFFSIZE];
+    int from_int;
+    float from_float;
+    
+    char to_unit[BUFFSIZE];
+    int to_int;
 
+    printf("Please give input unit\r\n");
+    printf("1. Inch\r\n");
+    printf("2. Centimetre\r\n");
+    printf("3. Metre\r\n");
+    printf("4. Foot\r\n\n");
+    printf("Your input: ");
+    fgets(from_unit, sizeof(from_unit), stdin);
+    
+    if(parse_input(from_unit, &from_int, &from_float)) {
+        printf("\nPlease give output unit\r\n");
+        printf("1. Inch\r\n");
+        printf("2. Centimetre\r\n");
+        printf("3. Metre\r\n");
+        printf("4. Foot\r\n\n");
+        printf("Your input: ");
+        fgets(to_unit, sizeof(to_unit), stdin);
+
+        if(parse_input(to_unit, &to_int, &from_float)) {
+            handleDistanceCalculation(&from_int, &to_int);
+        } else {
+            printf("\nPlease give valid unit\r\n\n");
+        }
+    } else {
+        printf("\nPlease give valid unit\r\n\n");
+    }
+    return;
 }
 
 // TODO: cup, gallon, litre, ml, barrel
@@ -270,7 +385,6 @@ int main() {
     char input[BUFFSIZE];
     int choice = 999;
     float to_calculation;
-
     
 
     printf("This is the unit converter program! \r\n");
