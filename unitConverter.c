@@ -3,8 +3,16 @@
 #include <ctype.h>
 #include <string.h>
 #include <stdbool.h>
+#include <curl/curl.h>
+#include <json-c/json.h>
 
 #define BUFFSIZE 1024
+
+// Struct for storing conversion rate response data
+struct Memory {
+    char *response;
+    size_t size;
+};
 
 typedef struct {
     char *valueArray[3];
@@ -349,6 +357,29 @@ void handleVolumeCalculation (int *from_int, int *to_int) {
     return;
 }
 
+// Checks the conversion type and calculates final currency result
+void handleMoneyCalculation(int *from_int, int *to_int) {
+    char amount[BUFFSIZE];
+    int amount_int;
+    float amount_float;
+    float finalValue;
+
+    printf("Enter the starting amount: ");
+    fgets(amount, sizeof(amount), stdin);
+
+    if(!parse_input(amount, &amount_int, &amount_float)) {
+        printf("\nPlease give valid amount\r\n\n");
+        return;
+    } else if (amount_int < 0) {
+        printf("\nNo negative amount allowed!\r\n\n");
+        return;
+    // 
+    }
+
+    printf("\nConverting %.2f %s to %s... \nResult: %.2f %s\r\n\n", amount_float, volUnits.valueArray[*from_int - 1], volUnits.valueArray[*to_int - 1], finalValue, volUnits.valueArray[*to_int - 1]);
+    return;
+}
+
 // Menu for temperature units
 // Calls: handleTempCalculation()
 void temperatureConversion() {
@@ -429,7 +460,29 @@ void weightConversion () {
 // Menu for currencies
 // TODO: dollar, euro, swedish krona, ruble
 void moneyConversion () {
+    char from_unit[BUFFSIZE];
+    int from_int;
+    float from_float;
+    
+    char to_unit[BUFFSIZE];
+    int to_int;
 
+    printf("Here you can convert EURO to other currencies with real-time exchange rates.\r\n");
+    printf("Please give output currency\r\n");
+    printf("1. Dollar\r\n");
+    printf("2. Japanese Yen\r\n");
+    printf("3. Swedish Krona\r\n");
+    printf("4. British Pound\r\n");
+    printf("5. Chinese Yuan\r\n\n");
+    printf("Your input: ");
+    fgets(from_unit, sizeof(from_unit), stdin);
+    
+    if(parse_input(from_unit, &from_int, &from_float)) {
+        handleMoneyCalculation(&from_int, &to_int);
+    } else {
+        printf("\nPlease give valid currency\r\n\n");
+    }
+    return;
 }
 
 // Menu for distance units
@@ -511,10 +564,59 @@ void volumeConversion () {
     return;
 }
 
+static size_t WriteMemoryCallback(void *contents, size_t size, size_t nmemb, void *userp) {
+    size_t realsize = size * nmemb;
+    struct Memory *mem = (struct Memory *)userp;
+
+    char *ptr = realloc(mem->response, mem->size + realsize + 1);
+    if(ptr == NULL) {
+        // out of memory
+        printf("Not enough memory (realloc returned NULL)\n");
+        return 0;
+    }
+
+    
+    mem->response = ptr;
+    memcpy(&(mem->response[mem->size]), contents, realsize);
+    mem->size += realsize;
+    mem->response[mem->size] = 0;
+
+    return realsize;
+}
+
 int main() {
     char input[BUFFSIZE];
     int choice = 999;
     float to_calculation;
+
+    // Values for exchange rates
+    CURL *curl;
+    CURLcode res;
+    struct Memory chunk;
+
+    chunk.response = malloc(1);
+    chunk.size = 0;
+
+    curl_global_init(CURL_GLOBAL_ALL);
+    curl = curl_easy_init();
+
+    if(curl) {
+        char url[256];
+        snprintf(url, sizeof(url), "https://api.boffsaopendata.fi/referencerates/v2/api/V2?currencies=USD,JPY,SEK,GBP,CNY");
+        curl_easy_setopt(curl, CURLOPT_URL, url );
+        curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
+        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteMemoryCallback);
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)&chunk);
+
+        
+        res = curl_easy_perform(curl);
+        if(res != CURLE_OK) {
+            fprintf(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
+        }
+        curl_easy_cleanup(curl);
+
+        struct json_object *json = json_tokener_parse(chunk.response);
+    }
     
 
     printf("This is the unit converter program! \r\n");
@@ -551,6 +653,8 @@ int main() {
                     break;
                 case 0:
                     printf("Exiting system...\r\n\n");
+                    free(chunk.response);
+                    curl_global_cleanup();
                     exit(0);
                     break;
                 default:
@@ -561,5 +665,6 @@ int main() {
             printf("\nInvalid choice, try again.\r\n\n");
         }
     }
+
     return 0;
 }
