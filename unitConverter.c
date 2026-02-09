@@ -3,8 +3,8 @@
 #include <ctype.h>
 #include <string.h>
 #include <stdbool.h>
-#include <curl/curl.h>
-#include <json-c/json.h>
+// #include <curl/curl.h>
+// #include <json-c/json.h>
 
 #define BUFFSIZE 1024
 
@@ -92,7 +92,10 @@ void handleTempCalculation(int *from_int, int *to_int) {
     if(*from_int == *to_int) {
         printf("\nCannot convert to same unit!\r\n\n");
         return;
-    } 
+    } else if(*from_int < 1 || *from_int > 3 || *to_int < 1 || *to_int > 3) {
+        printf("\nInvalid unit choice!\r\n\n");
+        return;
+    }
 
     printf("Enter the starting temperature: ");
     fgets(amount, sizeof(amount), stdin);
@@ -134,6 +137,9 @@ void handleWeightCalculation (int *from_int, int *to_int) {
 
     if(*from_int == *to_int) {
         printf("\nCannot convert to same unit!\r\n\n");
+        return;
+    } else if(*from_int < 1 || *from_int > 5 || *to_int < 1 || *to_int > 5) {
+        printf("\nInvalid unit choice!\r\n\n");
         return;
     }
 
@@ -222,6 +228,9 @@ void handleDistanceCalculation (int *from_int, int *to_int) {
     if(*from_int == *to_int) {
         printf("\nCannot convert to same unit!\r\n\n");
         return;
+    } else if(*from_int < 1 || *from_int > 4 || *to_int < 1 || *to_int > 4) {
+        printf("\nInvalid unit choice!\r\n\n");
+        return;
     }
 
     printf("Enter the starting distance: ");
@@ -284,6 +293,9 @@ void handleVolumeCalculation (int *from_int, int *to_int) {
 
     if(*from_int == *to_int) {
         printf("\nCannot convert to same unit!\r\n\n");
+        return;
+    } else if(*from_int < 1 || *from_int > 5 || *to_int < 1 || *to_int > 5) {
+        printf("\nInvalid unit choice!\r\n\n");
         return;
     }
 
@@ -369,6 +381,14 @@ void handleMoneyCalculation(int *from_int, int *to_int) {
     float amount_float;
     float finalValue;
 
+    if(*from_int == *to_int) {
+        printf("\nCannot convert to same unit!\r\n\n");
+        return;
+    } else if(*from_int < 1 || *from_int > 5 || *to_int < 1 || *to_int > 5) {
+        printf("\nInvalid currency choice!\r\n\n");
+        return;
+    }
+
     printf("Enter the starting amount: ");
     fgets(amount, sizeof(amount), stdin);
 
@@ -378,7 +398,6 @@ void handleMoneyCalculation(int *from_int, int *to_int) {
     } else if (amount_int < 0) {
         printf("\nNo negative amount allowed!\r\n\n");
         return;
-    // 
     }
 
     printf("\nConverting %.2f EUR to %s... \nResult: %.2f %s\r\n\n", amount_float, curUnits.valueArray[*from_int -1], finalValue, curUnits.valueArray[*to_int -1]);
