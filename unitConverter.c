@@ -30,11 +30,16 @@ typedef struct {
     char *valueArray[5];
 } Volumes;
 
+typedef struct {
+    char *valueArray[5];
+} Currency;
+
 // Initializing the units
 static Temperatures tempUnits = {"Celsius", "Fahrenheit", "Kelvin"};
 static Weights weightUnits = {"Gram", "Kilogram", "Ounce (US)", "Pound (US)", "Stone (GBR)"};
 static Distances distUnits = {"Inch", "Centimetre", "Metre", "Foot"};
 static Volumes volUnits = {"Millilitre", "Litre", "Cup (US)", "Gallon (US)", "Barrel (Oil)"};
+static Currency curUnits = {"USD", "JPY", "SEK", "GBP", "CNY"};
 
 // Return conditions: true IF input is an integer, ELSE false
 // Notes: Negative integer values accepted, must check validity of input elsewhere
@@ -376,7 +381,7 @@ void handleMoneyCalculation(int *from_int, int *to_int) {
     // 
     }
 
-    printf("\nConverting %.2f %s to %s... \nResult: %.2f %s\r\n\n", amount_float, volUnits.valueArray[*from_int - 1], volUnits.valueArray[*to_int - 1], finalValue, volUnits.valueArray[*to_int - 1]);
+    printf("\nConverting %.2f EUR to %s... \nResult: %.2f %s\r\n\n", amount_float, curUnits.valueArray[*from_int -1], finalValue, curUnits.valueArray[*to_int -1]);
     return;
 }
 
