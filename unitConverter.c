@@ -3,8 +3,9 @@
 #include <ctype.h>
 #include <string.h>
 #include <stdbool.h>
-// #include <curl/curl.h>
-// #include <json-c/json.h>
+#include <curl/curl.h>
+#include <json-c/json.h>
+
 
 #define BUFFSIZE 1024
 
@@ -39,7 +40,7 @@ static Temperatures tempUnits = {"Celsius", "Fahrenheit", "Kelvin"};
 static Weights weightUnits = {"Gram", "Kilogram", "Ounce (US)", "Pound (US)", "Stone (GBR)"};
 static Distances distUnits = {"Inch", "Centimetre", "Metre", "Foot"};
 static Volumes volUnits = {"Millilitre", "Litre", "Cup (US)", "Gallon (US)", "Barrel (Oil)"};
-static Currency curUnits = {"USD", "JPY", "SEK", "GBP", "CNY"};
+static Currency curUnits = {"CNY", "GBP", "JPY", "SEK", "USD"};
 
 // Return conditions: true IF input is an integer, ELSE false
 // Notes: Negative integer values accepted, must check validity of input elsewhere
@@ -375,19 +376,17 @@ void handleVolumeCalculation (int *from_int, int *to_int) {
 }
 
 // Checks the conversion type and calculates final currency result
-void handleMoneyCalculation(int *from_int, int *to_int) {
+void handleMoneyCalculation(int *to_int, float currency_rates[5]) {
     char amount[BUFFSIZE];
     int amount_int;
     float amount_float;
     float finalValue;
 
-    if(*from_int == *to_int) {
-        printf("\nCannot convert to same unit!\r\n\n");
-        return;
-    } else if(*from_int < 1 || *from_int > 5 || *to_int < 1 || *to_int > 5) {
+    if(*to_int < 1 || *to_int > 5) {
         printf("\nInvalid currency choice!\r\n\n");
         return;
     }
+
 
     printf("Enter the starting amount: ");
     fgets(amount, sizeof(amount), stdin);
@@ -400,7 +399,9 @@ void handleMoneyCalculation(int *from_int, int *to_int) {
         return;
     }
 
-    printf("\nConverting %.2f EUR to %s... \nResult: %.2f %s\r\n\n", amount_float, curUnits.valueArray[*from_int -1], finalValue, curUnits.valueArray[*to_int -1]);
+    finalValue = amount_float * currency_rates[*to_int - 1];
+
+    printf("\nConverting %.2f EUR to %s with exchange rate of %.5f... \nResult: %.2f %s\r\n\n", amount_float, curUnits.valueArray[*to_int - 1], currency_rates[*to_int - 1], finalValue, curUnits.valueArray[*to_int - 1]);
     return;
 }
 
@@ -482,27 +483,23 @@ void weightConversion () {
 }
 
 // Menu for currencies
-// TODO: dollar, euro, swedish krona, ruble
-void moneyConversion () {
-    char from_unit[BUFFSIZE];
-    int from_int;
-    float from_float;
-    
+void moneyConversion (float currency_rates[5]) {
     char to_unit[BUFFSIZE];
     int to_int;
+    float to_float;
 
     printf("Here you can convert EURO to other currencies with real-time exchange rates.\r\n");
     printf("Please give output currency\r\n");
-    printf("1. Dollar\r\n");
-    printf("2. Japanese Yen\r\n");
-    printf("3. Swedish Krona\r\n");
-    printf("4. British Pound\r\n");
-    printf("5. Chinese Yuan\r\n\n");
+    printf("1. Chinese Yuan\r\n");
+    printf("2. British Pound\r\n");
+    printf("3. Japanese Yen\r\n");
+    printf("4. Swedish Krona\r\n");
+    printf("5. United States Dollar\r\n\n");
     printf("Your input: ");
-    fgets(from_unit, sizeof(from_unit), stdin);
+    fgets(to_unit, sizeof(to_unit), stdin);
     
-    if(parse_input(from_unit, &from_int, &from_float)) {
-        handleMoneyCalculation(&from_int, &to_int);
+    if(parse_input(to_unit, &to_int, &to_float)) {
+        handleMoneyCalculation(&to_int, currency_rates);
     } else {
         printf("\nPlease give valid currency\r\n\n");
     }
@@ -613,14 +610,18 @@ int main() {
     int choice = 999;
     float to_calculation;
 
-    // Values for exchange rates
+    // The array of currency exchange rate values
+    float currency_rates[5] = {0};
+
+
+    // CURL variables for fetching exchange rates
     CURL *curl;
     CURLcode res;
     struct Memory chunk;
-
     chunk.response = malloc(1);
     chunk.size = 0;
 
+    // Initialize CURL
     curl_global_init(CURL_GLOBAL_ALL);
     curl = curl_easy_init();
 
@@ -634,12 +635,99 @@ int main() {
 
         
         res = curl_easy_perform(curl);
+
+        // If curl response status is not OK, free memory and exit system
         if(res != CURLE_OK) {
             fprintf(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
-        }
-        curl_easy_cleanup(curl);
+            free(chunk.response);
+            curl_global_cleanup();
+            exit(1);
+        } else {
+            // If curl response is empty, free memory and exit system
+            if (chunk.size == 0 || chunk.response == NULL) {
+                fprintf(stderr, "Error: Empty response received\n");
+                free(chunk.response);
+                curl_easy_cleanup(curl);
+                exit(1);
+            }
+            
 
-        struct json_object *json = json_tokener_parse(chunk.response);
+            // Removing problematic null terminators from midway throuh the response. 
+            // JSON parser finds first null terminator and stops parsing.
+            // This fixes the issue of JSON parsing failing due to null terminators existing in the middle of our curl response.
+            for(int i = 0; i < chunk.size; i++) {
+                if(chunk.response[i] == '\0') {
+                    chunk.response[i] = ' ';
+                }
+            }
+            chunk.response[chunk.size] = '\0';
+
+
+            
+            /* Parse the response string into a JSON object */
+            json_tokener *tok = json_tokener_new();
+            json_object *root = json_tokener_parse_ex(tok, chunk.response, chunk.size);
+            enum json_tokener_error jerr = json_tokener_get_error(tok);
+            
+            // If JSON parsing fails, free memory and exit system
+            // Prints JSON parsing error status stored in "jerr"
+            if (root == NULL) {
+                fprintf(stderr, "Failed to parse JSON response\n");
+                fprintf(stderr, "JSON parsing error: %s\n", json_tokener_error_desc(jerr));
+                json_tokener_free(tok);
+                free(chunk.response);
+                curl_easy_cleanup(curl);
+                exit(1);
+            } else {
+                // Check that curl response is of type array
+                if (json_object_is_type(root, json_type_array)) {
+                    for (size_t i = 0; i < 5; i++) {
+                        // Finding the value element in JSON object
+                        json_object *elem = json_object_array_get_idx(root, i);
+                        json_object *rates = json_object_object_get(elem, " E x c h a n g e R a t e s ");
+                        json_object *observations = json_object_array_get_idx(rates, 0);
+                        json_object *value = json_object_object_get(observations, " V a l u e ");
+                        const char *value_str = json_object_get_string(value);
+                        
+                        // Temp values for storing response data without whitespace
+                        // Extra space reserved for null terminator and additional 0 in case value begins with ,
+                        char temp_value[strlen(value_str) + 2];
+                        size_t list_index = 0;
+
+                        
+                        // API returns sub 1 values without the initial 0
+                        // Checks if value begins with "," and add the 0 when needed
+                        // Replace all "," with "." to allow type conversion to float for later calculations
+                        // Add non-whitespace characters to temp_value
+                        for(size_t k = 0; k < strlen(value_str); k++) {
+                            if(!isspace(value_str[k])) {
+                                if(k == 1 && value_str[k] == ',') {
+                                    temp_value[list_index] = '0';
+                                    list_index++;
+                                }
+                                if(value_str[k] == ',') {
+                                    temp_value[list_index] = '.';
+                                    list_index++;
+                                } else {
+                                    temp_value[list_index] = value_str[k];
+                                    list_index++;
+                                }
+                            }
+                        }
+                        // Adding null terminator and storing float values in currency_rates
+                        temp_value[list_index] = '\0';                        
+                        currency_rates[i] = atof(temp_value);
+                    }
+                } else {
+                    fprintf(stderr, "Warning: Response is not a JSON array (type: %d)\n", json_object_get_type(root));
+                }
+                json_object_put(root); /* release when done using the tree */
+            }
+            json_tokener_free(tok);
+            free(chunk.response);
+            curl_easy_cleanup(curl);
+        }
+        
     }
     
 
@@ -670,15 +758,13 @@ int main() {
                     distanceConversion();
                     break;
                 case 4:
-                    moneyConversion();
+                    moneyConversion(currency_rates);
                     break;
                 case 5:
                     volumeConversion();
                     break;
                 case 0:
                     printf("Exiting system...\r\n\n");
-                    free(chunk.response);
-                    curl_global_cleanup();
                     exit(0);
                     break;
                 default:
